@@ -1,6 +1,6 @@
 use clap::{Parser, Subcommand};
 use serde::Serialize;
-use textdistance_rs::algorithms::{edit_based, sequence_based, simple, token_based};
+use textdistance_rs::algorithms::{edit_based, phonetic, sequence_based, simple, token_based};
 use textdistance_rs::Algorithm;
 
 #[derive(Parser)]
@@ -117,6 +117,10 @@ enum Commands {
     Lcsstr { sequences: Vec<String> },
     /// Ratcliff-Obershelp similarity
     RatcliffObershelp { sequences: Vec<String> },
+    /// MRA similarity
+    Mra { sequences: Vec<String> },
+    /// Editex distance
+    Editex { sequences: Vec<String> },
 }
 
 #[derive(Serialize)]
@@ -305,6 +309,14 @@ fn main() {
                 "ratcliff_obershelp",
                 &seqs,
             );
+        }
+        Commands::Mra { sequences } => {
+            let seqs = to_vec_strings(&sequences);
+            run_algorithm(&phonetic::MRA, "mra", &seqs);
+        }
+        Commands::Editex { sequences } => {
+            let seqs = to_vec_strings(&sequences);
+            run_algorithm(&phonetic::Editex::default(), "editex", &seqs);
         }
     }
 }
