@@ -1,6 +1,6 @@
 use clap::{Parser, Subcommand};
 use serde::Serialize;
-use textdistance_rs::algorithms::simple;
+use textdistance_rs::algorithms::{simple, token_based};
 use textdistance_rs::Algorithm;
 
 #[derive(Parser)]
@@ -29,6 +29,60 @@ enum Commands {
         #[arg(long, default_value = "1")]
         match_cost: usize,
     },
+    /// Jaccard similarity
+    Jaccard {
+        sequences: Vec<String>,
+        #[arg(long)]
+        qval: Option<usize>,
+        #[arg(long)]
+        as_set: bool,
+    },
+    /// Sorensen (Dice) similarity
+    Sorensen {
+        sequences: Vec<String>,
+        #[arg(long)]
+        qval: Option<usize>,
+        #[arg(long)]
+        as_set: bool,
+    },
+    /// Tversky similarity
+    Tversky {
+        sequences: Vec<String>,
+        #[arg(long)]
+        qval: Option<usize>,
+        #[arg(long, num_args = 1.., default_values_t = [1.0, 1.0])]
+        ks: Vec<f64>,
+        #[arg(long)]
+        bias: Option<f64>,
+        #[arg(long)]
+        as_set: bool,
+    },
+    /// Overlap similarity
+    Overlap {
+        sequences: Vec<String>,
+        #[arg(long)]
+        qval: Option<usize>,
+        #[arg(long)]
+        as_set: bool,
+    },
+    /// Cosine similarity
+    Cosine {
+        sequences: Vec<String>,
+        #[arg(long)]
+        qval: Option<usize>,
+        #[arg(long)]
+        as_set: bool,
+    },
+    /// Tanimoto similarity
+    Tanimoto {
+        sequences: Vec<String>,
+        #[arg(long)]
+        qval: Option<usize>,
+        #[arg(long)]
+        as_set: bool,
+    },
+    /// Bag distance
+    Bag { sequences: Vec<String> },
 }
 
 #[derive(Serialize)]
@@ -85,6 +139,66 @@ fn main() {
             let seqs = to_vec_strings(&sequences);
             let alg = simple::Matrix::new(None, mismatch_cost, match_cost, true);
             run_algorithm(&alg, "matrix", &seqs);
+        }
+        Commands::Jaccard {
+            sequences,
+            qval,
+            as_set,
+        } => {
+            let seqs = to_vec_strings(&sequences);
+            let alg = token_based::Jaccard::new(qval, as_set);
+            run_algorithm(&alg, "jaccard", &seqs);
+        }
+        Commands::Sorensen {
+            sequences,
+            qval,
+            as_set,
+        } => {
+            let seqs = to_vec_strings(&sequences);
+            let alg = token_based::Sorensen::new(qval, as_set);
+            run_algorithm(&alg, "sorensen", &seqs);
+        }
+        Commands::Tversky {
+            sequences,
+            qval,
+            ks,
+            bias,
+            as_set,
+        } => {
+            let seqs = to_vec_strings(&sequences);
+            let alg = token_based::Tversky::new(qval, ks, bias, as_set);
+            run_algorithm(&alg, "tversky", &seqs);
+        }
+        Commands::Overlap {
+            sequences,
+            qval,
+            as_set,
+        } => {
+            let seqs = to_vec_strings(&sequences);
+            let alg = token_based::Overlap::new(qval, as_set);
+            run_algorithm(&alg, "overlap", &seqs);
+        }
+        Commands::Cosine {
+            sequences,
+            qval,
+            as_set,
+        } => {
+            let seqs = to_vec_strings(&sequences);
+            let alg = token_based::Cosine::new(qval, as_set);
+            run_algorithm(&alg, "cosine", &seqs);
+        }
+        Commands::Tanimoto {
+            sequences,
+            qval,
+            as_set,
+        } => {
+            let seqs = to_vec_strings(&sequences);
+            let alg = token_based::Tanimoto::new(qval, as_set);
+            run_algorithm(&alg, "tanimoto", &seqs);
+        }
+        Commands::Bag { sequences } => {
+            let seqs = to_vec_strings(&sequences);
+            run_algorithm(&token_based::Bag, "bag", &seqs);
         }
     }
 }
