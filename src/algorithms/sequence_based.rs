@@ -179,7 +179,7 @@ impl RatcliffObershelp {
         subseq_len + self.find_matching(&[before1, before2]) + self.find_matching(&[after1, after2])
     }
 
-    fn find_lcs_str(&self, s1: &[String], s2: &[String], len: usize) -> String {
+    fn find_lcs_str(&self, s1: &[String], s2: &[String], _len: usize) -> String {
         let len1 = s1.len();
         let len2 = s2.len();
         let mut lengths = vec![vec![0usize; len2 + 1]; len1 + 1];

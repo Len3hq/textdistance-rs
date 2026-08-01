@@ -628,7 +628,7 @@ impl Algorithm for MLIPNS {
         }
         let s1 = &sequences[0];
         let s2 = &sequences[1];
-        let max_len = s1.len().max(s2.len());
+        let _max_len = s1.len().max(s2.len());
         let mut distance = 0usize;
         let mut prev_match = false;
 

@@ -44,7 +44,7 @@ impl Algorithm for MRA {
 
             // Append remaining chars beyond minlen
             let mut updated = Vec::new();
-            for (si, s) in enumerate(&sequences) {
+            for (si, s) in sequences.iter().enumerate() {
                 let mut combined;
                 if si < new_sequences.len() {
                     combined = new_sequences[si].clone();
