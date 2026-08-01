@@ -1,6 +1,6 @@
 use clap::{Parser, Subcommand};
 use serde::Serialize;
-use textdistance_rs::algorithms::{simple, token_based};
+use textdistance_rs::algorithms::{edit_based, simple, token_based};
 use textdistance_rs::Algorithm;
 
 #[derive(Parser)]
@@ -83,6 +83,34 @@ enum Commands {
     },
     /// Bag distance
     Bag { sequences: Vec<String> },
+    /// Hamming distance
+    Hamming { sequences: Vec<String> },
+    /// Levenshtein distance
+    Levenshtein { sequences: Vec<String> },
+    /// Damerau-Levenshtein distance
+    DamerauLevenshtein {
+        sequences: Vec<String>,
+        #[arg(long)]
+        restricted: bool,
+    },
+    /// Jaro similarity
+    Jaro { sequences: Vec<String> },
+    /// Jaro-Winkler similarity
+    JaroWinkler {
+        sequences: Vec<String>,
+        #[arg(long)]
+        winklerize: bool,
+    },
+    /// Needleman-Wunsch similarity
+    NeedlemanWunsch { sequences: Vec<String> },
+    /// Smith-Waterman similarity
+    SmithWaterman { sequences: Vec<String> },
+    /// Gotoh similarity
+    Gotoh { sequences: Vec<String> },
+    /// StrCmp95 similarity
+    StrCmp95 { sequences: Vec<String> },
+    /// MLIPNS distance
+    MLIPNS { sequences: Vec<String> },
 }
 
 #[derive(Serialize)]
@@ -199,6 +227,62 @@ fn main() {
         Commands::Bag { sequences } => {
             let seqs = to_vec_strings(&sequences);
             run_algorithm(&token_based::Bag, "bag", &seqs);
+        }
+        Commands::Hamming { sequences } => {
+            let seqs = to_vec_strings(&sequences);
+            run_algorithm(&edit_based::Hamming, "hamming", &seqs);
+        }
+        Commands::Levenshtein { sequences } => {
+            let seqs = to_vec_strings(&sequences);
+            run_algorithm(&edit_based::Levenshtein, "levenshtein", &seqs);
+        }
+        Commands::DamerauLevenshtein {
+            sequences,
+            restricted,
+        } => {
+            let seqs = to_vec_strings(&sequences);
+            let alg = edit_based::DamerauLevenshtein::new(restricted);
+            run_algorithm(&alg, "damerau_levenshtein", &seqs);
+        }
+        Commands::Jaro { sequences } => {
+            let seqs = to_vec_strings(&sequences);
+            run_algorithm(&edit_based::Jaro, "jaro", &seqs);
+        }
+        Commands::JaroWinkler {
+            sequences,
+            winklerize,
+        } => {
+            let seqs = to_vec_strings(&sequences);
+            let alg = edit_based::JaroWinkler::new(winklerize);
+            run_algorithm(&alg, "jaro_winkler", &seqs);
+        }
+        Commands::NeedlemanWunsch { sequences } => {
+            let seqs = to_vec_strings(&sequences);
+            run_algorithm(
+                &edit_based::NeedlemanWunsch::default(),
+                "needleman_wunsch",
+                &seqs,
+            );
+        }
+        Commands::SmithWaterman { sequences } => {
+            let seqs = to_vec_strings(&sequences);
+            run_algorithm(
+                &edit_based::SmithWaterman::default(),
+                "smith_waterman",
+                &seqs,
+            );
+        }
+        Commands::Gotoh { sequences } => {
+            let seqs = to_vec_strings(&sequences);
+            run_algorithm(&edit_based::Gotoh::default(), "gotoh", &seqs);
+        }
+        Commands::StrCmp95 { sequences } => {
+            let seqs = to_vec_strings(&sequences);
+            run_algorithm(&edit_based::StrCmp95, "strcmp95", &seqs);
+        }
+        Commands::MLIPNS { sequences } => {
+            let seqs = to_vec_strings(&sequences);
+            run_algorithm(&edit_based::MLIPNS::default(), "mlipns", &seqs);
         }
     }
 }
