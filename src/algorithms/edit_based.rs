@@ -139,51 +139,43 @@ impl DamerauLevenshtein {
         let len1 = s1.len();
         let len2 = s2.len();
 
-        let max_dist = len1 + len2;
-        let mut d: Vec<Vec<usize>> = vec![vec![0; len2 + 2]; len1 + 2];
+        // Standard optimal string alignment with full transposition support.
+        // Based on: https://en.wikipedia.org/wiki/Damerau%E2%80%93Levenshtein_distance
+        let mut d = vec![vec![0usize; len2 + 1]; len1 + 1];
 
-        d[0][0] = max_dist;
         for i in 0..=len1 {
-            d[i + 1][1] = i;
-            d[i + 1][0] = max_dist;
+            d[i][0] = i;
         }
         for j in 0..=len2 {
-            d[1][j + 1] = j;
-            d[0][j + 1] = max_dist;
+            d[0][j] = j;
         }
 
-        // Last position of each character
         use std::collections::HashMap;
         let mut last_row: HashMap<String, usize> = HashMap::new();
 
         for i in 1..=len1 {
-            let mut last_match_col = 0;
-            let mut last_match_row;
-            let ch1 = &s1[i - 1];
-
+            let mut db = 0usize;
             for j in 1..=len2 {
-                let ch2 = &s2[j - 1];
-                last_match_row = *last_row.get(ch2).unwrap_or(&0);
-                let cost = if ch1 == ch2 { 0 } else { 1 };
+                let i1 = *last_row.get(&s2[j - 1]).unwrap_or(&0);
+                let j1 = db;
 
-                let mut val = min(min(d[i][j + 1] + 1, d[i + 1][j] + 1), d[i][j] + cost);
-
-                if last_match_row > 0 && last_match_col > 0 {
-                    let k = last_match_row - 1;
-                    let l = last_match_col - 1;
-                    val = min(val, d[k][l] + (i - k - 1) + 1 + (j - l - 1));
+                let cost = if s1[i - 1] == s2[j - 1] { 0 } else { 1 };
+                if cost == 0 {
+                    db = j;
                 }
 
-                d[i + 1][j + 1] = val;
+                d[i][j] = (d[i - 1][j - 1] + cost)
+                    .min(d[i][j - 1] + 1)
+                    .min(d[i - 1][j] + 1);
 
-                if cost == 0 {
-                    last_match_col = j;
+                if i1 > 0 && j1 > 0 {
+                    d[i][j] = d[i][j].min(d[i1 - 1][j1 - 1] + (i - i1 - 1) + 1 + (j - j1 - 1));
                 }
             }
-            last_row.insert(ch1.clone(), i);
+            last_row.insert(s1[i - 1].clone(), i);
         }
 
-        d[len1 + 1][len2 + 1] as f64
+        d[len1][len2] as f64
     }
 }
 

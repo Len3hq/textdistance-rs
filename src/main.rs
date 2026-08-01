@@ -90,7 +90,7 @@ enum Commands {
     /// Damerau-Levenshtein distance
     DamerauLevenshtein {
         sequences: Vec<String>,
-        #[arg(long)]
+        #[arg(long, default_value = "false")]
         restricted: bool,
     },
     /// Jaro similarity
