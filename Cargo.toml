@@ -1,6 +1,19 @@
 [package]
 name = "textdistance-rs"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
+license = "MIT"
+description = "Compute distance between sequences. 30+ algorithms, pure Rust implementation. Port of life4/textdistance."
+
+[[bin]]
+name = "textdistance-rs"
+path = "src/main.rs"
+
+[lib]
+name = "textdistance_rs"
+path = "src/lib.rs"
 
 [dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+clap = { version = "4", features = ["derive"] }
