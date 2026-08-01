@@ -1,6 +1,6 @@
 use clap::{Parser, Subcommand};
 use serde::Serialize;
-use textdistance_rs::algorithms::{edit_based, simple, token_based};
+use textdistance_rs::algorithms::{edit_based, sequence_based, simple, token_based};
 use textdistance_rs::Algorithm;
 
 #[derive(Parser)]
@@ -111,6 +111,12 @@ enum Commands {
     StrCmp95 { sequences: Vec<String> },
     /// MLIPNS distance
     MLIPNS { sequences: Vec<String> },
+    /// LCSSeq similarity
+    Lcsseq { sequences: Vec<String> },
+    /// LCSStr similarity
+    Lcsstr { sequences: Vec<String> },
+    /// Ratcliff-Obershelp similarity
+    RatcliffObershelp { sequences: Vec<String> },
 }
 
 #[derive(Serialize)]
@@ -283,6 +289,22 @@ fn main() {
         Commands::MLIPNS { sequences } => {
             let seqs = to_vec_strings(&sequences);
             run_algorithm(&edit_based::MLIPNS::default(), "mlipns", &seqs);
+        }
+        Commands::Lcsseq { sequences } => {
+            let seqs = to_vec_strings(&sequences);
+            run_algorithm(&sequence_based::LCSSeq, "lcsseq", &seqs);
+        }
+        Commands::Lcsstr { sequences } => {
+            let seqs = to_vec_strings(&sequences);
+            run_algorithm(&sequence_based::LCSStr, "lcsstr", &seqs);
+        }
+        Commands::RatcliffObershelp { sequences } => {
+            let seqs = to_vec_strings(&sequences);
+            run_algorithm(
+                &sequence_based::RatcliffObershelp,
+                "ratcliff_obershelp",
+                &seqs,
+            );
         }
     }
 }
