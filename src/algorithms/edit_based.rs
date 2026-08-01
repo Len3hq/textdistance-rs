@@ -528,62 +528,17 @@ impl Algorithm for StrCmp95 {
         if sequences.len() < 2 {
             return 0.0;
         }
-        let s1 = &sequences[0];
-        let s2 = &sequences[1];
-        let s1_str: String = s1.join("");
-        let s2_str: String = s2.join("");
+        let s1_str: String = sequences[0].join("");
+        let s2_str: String = sequences[1].join("");
 
-        let len1 = s1_str.len();
-        let len2 = s2_str.len();
+        let s1: Vec<char> = s1_str.trim().to_uppercase().chars().collect();
+        let s2: Vec<char> = s2_str.trim().to_uppercase().chars().collect();
 
-        if len1 == 0 && len2 == 0 {
-            return 1.0;
+        if let Some(result) = self.quick_answer_str(&s1, &s2) {
+            return result;
         }
 
-        let sp = |c: char| -> bool { c.is_ascii_whitespace() || c.is_ascii_punctuation() };
-
-        // Find span of first non-space/punctuation chars
-        let mut span1 = 0;
-        for c in s1_str.chars() {
-            if sp(c) {
-                break;
-            }
-            span1 += 1;
-        }
-        let mut span2 = 0;
-        for c in s2_str.chars() {
-            if sp(c) {
-                break;
-            }
-            span2 += 1;
-        }
-
-        let mut score = 0.0;
-        // Longest common substring
-        let lcs = {
-            let mut max_len = 0;
-            for i in 0..len1 {
-                for j in 0..len2 {
-                    let mut k = 0;
-                    while i + k < len1
-                        && j + k < len2
-                        && s1_str.as_bytes()[i + k] == s2_str.as_bytes()[j + k]
-                    {
-                        k += 1;
-                    }
-                    if k > max_len {
-                        max_len = k;
-                    }
-                }
-            }
-            max_len
-        };
-
-        if lcs > 0 {
-            let m = 2.0 * lcs as f64 / (len1 + len2) as f64;
-            score = m + m * 0.1 * (span1.min(span2) as f64 / m.max(1.0) as f64);
-        }
-        score.min(1.0)
+        strcmp95_impl(&s1, &s2)
     }
 
     fn maximum(&self, _sequences: &[Vec<String>]) -> f64 {
@@ -593,6 +548,195 @@ impl Algorithm for StrCmp95 {
     fn is_similarity(&self) -> bool {
         true
     }
+}
+
+impl StrCmp95 {
+    fn quick_answer_str(&self, s1: &[char], s2: &[char]) -> Option<f64> {
+        if s1.is_empty() && s2.is_empty() {
+            return Some(1.0);
+        }
+        if s1.is_empty() || s2.is_empty() {
+            return Some(0.0);
+        }
+        if s1 == s2 {
+            return Some(1.0);
+        }
+        None
+    }
+}
+
+fn strcmp95_impl(s1: &[char], s2: &[char]) -> f64 {
+    use std::collections::HashMap;
+
+    let len1 = s1.len();
+    let len2 = s2.len();
+
+    // Phonetic/keyboard proximity table (sp_mx)
+    let sp_mx: [(&str, &str); 42] = [
+        ("A", "E"),
+        ("A", "I"),
+        ("A", "O"),
+        ("A", "U"),
+        ("B", "V"),
+        ("E", "I"),
+        ("E", "O"),
+        ("E", "U"),
+        ("I", "O"),
+        ("I", "U"),
+        ("O", "U"),
+        ("I", "Y"),
+        ("E", "Y"),
+        ("C", "G"),
+        ("E", "F"),
+        ("W", "U"),
+        ("W", "V"),
+        ("X", "K"),
+        ("S", "Z"),
+        ("X", "S"),
+        ("Q", "C"),
+        ("U", "V"),
+        ("M", "N"),
+        ("L", "I"),
+        ("Q", "O"),
+        ("P", "R"),
+        ("I", "J"),
+        ("2", "Z"),
+        ("5", "S"),
+        ("8", "B"),
+        ("1", "I"),
+        ("1", "L"),
+        ("0", "O"),
+        ("0", "Q"),
+        ("C", "K"),
+        ("G", "J"),
+        ("E", " "),
+        ("Y", " "),
+        ("S", " "),
+        (" ", "S"),
+        (" ", "Y"),
+        (" ", "E"),
+    ];
+
+    let mut adjwt: HashMap<(String, String), usize> = HashMap::new();
+    for (c1, c2) in &sp_mx {
+        adjwt.insert((c1.to_string(), c2.to_string()), 3);
+        adjwt.insert((c2.to_string(), c1.to_string()), 3);
+    }
+
+    let search_range;
+    let minv;
+    if len1 > len2 {
+        search_range = len1;
+        minv = len2;
+    } else {
+        search_range = len2;
+        minv = len1;
+    }
+
+    let mut s1_flag = vec![0u8; search_range];
+    let mut s2_flag = vec![0u8; search_range];
+    let sr = if search_range / 2 > 1 {
+        search_range / 2 - 1
+    } else {
+        0
+    };
+
+    // Count matched pairs within search range
+    let mut num_com = 0i32;
+    let yl1 = len2 as i32 - 1;
+    for (i, &sc1) in s1.iter().enumerate() {
+        let lowlim = 0i32.max(i as i32 - sr as i32) as usize;
+        let hilim = (yl1.min(i as i32 + sr as i32) as usize + 1).min(len2);
+        for j in lowlim..hilim {
+            if s2_flag[j] == 0 && s2[j] == sc1 {
+                s2_flag[j] = 1;
+                s1_flag[i] = 1;
+                num_com += 1;
+                break;
+            }
+        }
+    }
+
+    if num_com == 0 {
+        return 0.0;
+    }
+
+    // Count transpositions
+    let mut k = 0usize;
+    let mut n_trans = 0i32;
+    for (i, &sc1) in s1.iter().enumerate() {
+        if s1_flag[i] == 0 {
+            continue;
+        }
+        for j in k..len2 {
+            if s2_flag[j] != 0 {
+                k = j + 1;
+                if sc1 != s2[j] {
+                    n_trans += 1;
+                }
+                break;
+            }
+        }
+    }
+    n_trans /= 2;
+
+    // Adjust for similarities in unmatched characters
+    let mut n_simi = 0i32;
+    if minv > num_com as usize {
+        for i in 0..len1 {
+            if s1_flag[i] != 0 {
+                continue;
+            }
+            let sc1 = s1[i] as u32;
+            if sc1 == 0 || sc1 > 90 {
+                continue;
+            }
+            for j in 0..len2 {
+                if s2_flag[j] != 0 {
+                    continue;
+                }
+                let sc2 = s2[j] as u32;
+                if sc2 == 0 || sc2 > 90 {
+                    continue;
+                }
+                let key = (s1[i].to_string(), s2[j].to_string());
+                if let Some(&wt) = adjwt.get(&key) {
+                    n_simi += wt as i32;
+                    s2_flag[j] = 2;
+                    break;
+                }
+            }
+        }
+    }
+    let num_sim = n_simi as f64 / 10.0 + num_com as f64;
+
+    // Main weight computation
+    let mut weight = num_sim / len1 as f64 + num_sim / len2 as f64;
+    weight += (num_com - n_trans) as f64 / num_com as f64;
+    weight /= 3.0;
+
+    if weight > 0.7 {
+        // Boost for common prefix
+        let j = minv.min(4);
+        let mut i = 0usize;
+        for (sc1, sc2) in s1.iter().zip(s2.iter()) {
+            if i >= j {
+                break;
+            }
+            if sc1 != sc2 {
+                break;
+            }
+            if sc1.is_ascii_digit() {
+                break;
+            }
+            i += 1;
+        }
+        if i > 0 {
+            weight += i as f64 * 0.1 * (1.0 - weight);
+        }
+    }
+
+    weight
 }
 
 // ── MLIPNS ──
