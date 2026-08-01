@@ -1,0 +1,6 @@
+track = "D"
+source_url = "https://github.com/life4/textdistance"
+source_commit = "master"
+kickoff_hash_algorithm = "sha256"
+kickoff_hashes_file = "tests/original/SHA256SUMS"
+language_pair = "Python → Rust"
