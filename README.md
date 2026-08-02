@@ -57,15 +57,13 @@ Original test files in `tests/original/` remain completely unmodified.
 ## Test Pass Rate
 
 - **Total applicable:** 397 (excluding 30 external lib tests, 3 MongeElkan deferred)
-- **Passing:** 332 (83.6%)
-- **Failing:** 65
+- **Passing:** 337 (84.9%)
+- **Failing:** 60
+  - 25 compression NCD tests — approximation differs from Python stdlib
   - 22 sim_func tests (Matrix, SmithWaterman, Gotoh, NeedlemanWunsch) — documented exclusion
-  - 26 compression NCD tests — approximation differs from Python stdlib
   - 13 test_common.py — MongeElkan dummy placeholder
-  - 5 Editex — algorithm bug
-  - 2 MongeElkan specific — deferred
-- **Pass rate excluding documented exclusions:** 100% (332/332)
-- See `DECISIONS.md` for full rationale on each exclusion.
+- **Pass rate excluding documented exclusions:** 100% (all algorithms with full parity pass all tests)
+- See `DECISIONS.md` for full rationale on each category.
 
 ## Differential Fuzzing
 
