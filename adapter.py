@@ -98,7 +98,12 @@ class MLIPNS(_AlgorithmWrapper):
 
 class Editex(_AlgorithmWrapper):
     def __init__(self, local=False, match_cost=0, group_cost=1, mismatch_cost=2, external=True):
-        super().__init__("editex", is_similarity=False)
+        super().__init__("editex", {
+            "local": local,
+            "match_cost": match_cost,
+            "group_cost": group_cost,
+            "mismatch_cost": mismatch_cost,
+        }, is_similarity=False)
 
 class Length(_AlgorithmWrapper):
     def __init__(self):

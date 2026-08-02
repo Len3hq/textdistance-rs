@@ -122,7 +122,17 @@ enum Commands {
     /// MRA similarity
     Mra { sequences: Vec<String> },
     /// Editex distance
-    Editex { sequences: Vec<String> },
+    Editex {
+        sequences: Vec<String>,
+        #[arg(long, default_value = "false")]
+        local: bool,
+        #[arg(long, default_value = "0")]
+        match_cost: usize,
+        #[arg(long, default_value = "1")]
+        group_cost: usize,
+        #[arg(long, default_value = "2")]
+        mismatch_cost: usize,
+    },
     /// SqrtNCD distance
     SqrtNcd { sequences: Vec<String> },
     /// EntropyNCD distance
@@ -332,9 +342,16 @@ fn main() {
             let seqs = to_vec_strings(&sequences);
             run_algorithm(&phonetic::MRA, "mra", &seqs);
         }
-        Commands::Editex { sequences } => {
+        Commands::Editex {
+            sequences,
+            local,
+            match_cost,
+            group_cost,
+            mismatch_cost,
+        } => {
             let seqs = to_vec_strings(&sequences);
-            run_algorithm(&phonetic::Editex::default(), "editex", &seqs);
+            let alg = phonetic::Editex::new(local, match_cost, group_cost, mismatch_cost);
+            run_algorithm(&alg, "editex", &seqs);
         }
         Commands::SqrtNcd { sequences } => {
             let seqs = to_vec_strings(&sequences);
