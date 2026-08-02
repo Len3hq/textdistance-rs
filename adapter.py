@@ -20,13 +20,16 @@ def _run(algorithm, *sequences, **kwargs):
         if isinstance(v, bool):
             if v:
                 args.append(f"--{kebab}")
-            # if False, don't add the flag at all
         elif isinstance(v, list):
             for item in v:
                 args.append(f"--{kebab}={item}")
         elif v is not None:
             args.append(f"--{kebab}={v}")
-    args.extend(sequences)
+    # Filter null bytes from sequences (subprocess can't handle them)
+    safe_sequences = [s.replace("\x00", "") for s in sequences]
+    # Use -- to separate flags from positional arguments
+    args.append("--")
+    args.extend(safe_sequences)
     result = subprocess.run(args, capture_output=True, text=True)
     if result.returncode != 0:
         raise RuntimeError(f"CLI error: {result.stderr.strip()}")
@@ -90,8 +93,8 @@ class DamerauLevenshtein(_AlgorithmWrapper):
         return data["distance"]
 
 class MLIPNS(_AlgorithmWrapper):
-    def __init__(self, threshold=0.5, external=True):
-        super().__init__("mlipns", is_similarity=False)
+    def __init__(self, threshold=0.25, maxmismatches=2, external=True):
+        super().__init__("mlipns", is_similarity=True)
 
 class Editex(_AlgorithmWrapper):
     def __init__(self, local=False, match_cost=0, group_cost=1, mismatch_cost=2, external=True):
@@ -295,15 +298,7 @@ class MongeElkan:
     def __init__(self, *args, **kwargs):
         raise NotImplementedError("MongeElkan is deferred")
 
-
-# Module-level instances
-bag = Bag()
-cosine = Cosine()
-dice = Sorensen()
-jaccard = Jaccard()
-monge_elkan = _NotPorted()
-
-# Dummy class for algorithms not ported — returns 0 to avoid cascading test failures
+# Dummy class for algorithms not ported
 class _NotPorted:
     def __init__(self, *args, **kwargs):
         pass
@@ -319,6 +314,14 @@ class _NotPorted:
         return 0
     def maximum(self, *args):
         return 1
+
+
+# Module-level instances
+bag = Bag()
+cosine = Cosine()
+dice = Sorensen()
+jaccard = Jaccard()
+monge_elkan = _NotPorted()
 overlap = Overlap()
 sorensen = Sorensen()
 sorensen_dice = Sorensen()

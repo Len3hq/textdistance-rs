@@ -743,53 +743,83 @@ fn strcmp95_impl(s1: &[char], s2: &[char]) -> f64 {
 
 pub struct MLIPNS {
     pub threshold: f64,
+    pub max_mismatches: usize,
 }
 
 impl MLIPNS {
-    pub fn new(threshold: f64) -> Self {
-        MLIPNS { threshold }
+    pub fn new(threshold: f64, max_mismatches: usize) -> Self {
+        MLIPNS {
+            threshold,
+            max_mismatches,
+        }
     }
 }
 
 impl Default for MLIPNS {
     fn default() -> Self {
-        MLIPNS { threshold: 0.5 }
+        MLIPNS {
+            threshold: 0.25,
+            max_mismatches: 2,
+        }
     }
 }
 
 impl Algorithm for MLIPNS {
     fn compute(&self, sequences: &[Vec<String>]) -> f64 {
+        if let Some(result) = self.quick_answer(sequences) {
+            return result;
+        }
         if sequences.len() < 2 {
             return 0.0;
         }
-        let s1 = &sequences[0];
-        let s2 = &sequences[1];
-        let _max_len = s1.len().max(s2.len());
-        let mut distance = 0usize;
-        let mut prev_match = false;
 
-        for (i, c1) in s1.iter().enumerate() {
-            if i < s2.len() && c1 == &s2[i] {
-                prev_match = true;
-            } else if !prev_match || i >= s2.len() {
-                distance += 1;
-                prev_match = false;
+        let mut mismatches = 0usize;
+        let ham_start = hamming_distance(&sequences[0], &sequences[1]);
+        let mut ham = ham_start;
+        let mut maxlen = sequences.iter().map(|s| s.len()).max().unwrap_or(0);
+
+        loop {
+            if sequences.iter().any(|s| s.is_empty()) {
+                return 1.0;
             }
+            if mismatches > self.max_mismatches {
+                break;
+            }
+            if maxlen == 0 {
+                return 1.0;
+            }
+            if 1.0 - (maxlen as f64 - ham as f64) / maxlen as f64 <= self.threshold {
+                return 1.0;
+            }
+            mismatches += 1;
+            ham = ham.saturating_sub(1);
+            maxlen = maxlen.saturating_sub(1);
         }
 
-        // Add remaining unmatched chars
-        if s2.len() > s1.len() {
-            distance += s2.len() - s1.len();
+        if maxlen == 0 {
+            1.0
+        } else {
+            0.0
         }
-
-        distance as f64
     }
 
-    fn maximum(&self, sequences: &[Vec<String>]) -> f64 {
-        sequences.iter().map(|s| s.len()).max().unwrap_or(0) as f64
+    fn maximum(&self, _sequences: &[Vec<String>]) -> f64 {
+        1.0
     }
 
     fn is_similarity(&self) -> bool {
-        false
+        true
     }
+}
+
+fn hamming_distance(s1: &[String], s2: &[String]) -> usize {
+    let max_len = s1.len().max(s2.len());
+    let min_len = s1.len().min(s2.len());
+    let mut dist = max_len - min_len;
+    for i in 0..min_len {
+        if s1[i] != s2[i] {
+            dist += 1;
+        }
+    }
+    dist
 }
