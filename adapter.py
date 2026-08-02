@@ -256,6 +256,39 @@ class Bag(_AlgorithmWrapper):
     def __init__(self, external=True):
         super().__init__("bag", is_similarity=False)
 
+# Compression-based
+class ArithNCD(_AlgorithmWrapper):
+    def __init__(self, qval=1):
+        super().__init__("arith-ncd", is_similarity=False)
+
+class RLENCD(_AlgorithmWrapper):
+    def __init__(self, qval=1):
+        super().__init__("rle-ncd", is_similarity=False)
+
+class BWTRLENCD(_AlgorithmWrapper):
+    def __init__(self):
+        super().__init__("bwtrle-ncd", is_similarity=False)
+
+class SqrtNCD(_AlgorithmWrapper):
+    def __init__(self, qval=1):
+        super().__init__("sqrt-ncd", is_similarity=False)
+
+class EntropyNCD(_AlgorithmWrapper):
+    def __init__(self, qval=1, coef=1, base=2):
+        super().__init__("entropy-ncd", is_similarity=False)
+
+class BZ2NCD(_AlgorithmWrapper):
+    def __init__(self):
+        super().__init__("bz2-ncd", is_similarity=False)
+
+class LZMANCD(_AlgorithmWrapper):
+    def __init__(self):
+        super().__init__("lzma-ncd", is_similarity=False)
+
+class ZLIBNCD(_AlgorithmWrapper):
+    def __init__(self):
+        super().__init__("zlib-ncd", is_similarity=False)
+
 
 # MongeElkan - deferred
 class MongeElkan:
@@ -268,7 +301,7 @@ bag = Bag()
 cosine = Cosine()
 dice = Sorensen()
 jaccard = Jaccard()
-monge_elkan = None
+monge_elkan = _NotPorted()
 
 # Dummy class for algorithms not ported — returns 0 to avoid cascading test failures
 class _NotPorted:
@@ -311,3 +344,13 @@ postfix = Postfix()
 length = Length()
 identity = Identity()
 matrix = Matrix()
+
+# Compression instances
+arith_ncd = ArithNCD()
+rle_ncd = RLENCD()
+bwtrle_ncd = BWTRLENCD()
+sqrt_ncd = SqrtNCD()
+entropy_ncd = EntropyNCD()
+bz2_ncd = BZ2NCD()
+lzma_ncd = LZMANCD()
+zlib_ncd = ZLIBNCD()

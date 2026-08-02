@@ -1,6 +1,8 @@
 use clap::{Parser, Subcommand};
 use serde::Serialize;
-use textdistance_rs::algorithms::{edit_based, phonetic, sequence_based, simple, token_based};
+use textdistance_rs::algorithms::{
+    compression_based, edit_based, phonetic, sequence_based, simple, token_based,
+};
 use textdistance_rs::Algorithm;
 
 #[derive(Parser)]
@@ -121,6 +123,22 @@ enum Commands {
     Mra { sequences: Vec<String> },
     /// Editex distance
     Editex { sequences: Vec<String> },
+    /// SqrtNCD distance
+    SqrtNcd { sequences: Vec<String> },
+    /// EntropyNCD distance
+    EntropyNcd { sequences: Vec<String> },
+    /// RLENCD distance
+    RleNcd { sequences: Vec<String> },
+    /// BWTRLENCD distance
+    BwtrleNcd { sequences: Vec<String> },
+    /// ArithNCD distance
+    ArithNcd { sequences: Vec<String> },
+    /// BZ2NCD distance
+    Bz2Ncd { sequences: Vec<String> },
+    /// LZMANCD distance
+    LzmaNcd { sequences: Vec<String> },
+    /// ZLIBNCD distance
+    ZlibNcd { sequences: Vec<String> },
 }
 
 #[derive(Serialize)]
@@ -317,6 +335,42 @@ fn main() {
         Commands::Editex { sequences } => {
             let seqs = to_vec_strings(&sequences);
             run_algorithm(&phonetic::Editex::default(), "editex", &seqs);
+        }
+        Commands::SqrtNcd { sequences } => {
+            let seqs = to_vec_strings(&sequences);
+            run_algorithm(&compression_based::SqrtNCD, "sqrt_ncd", &seqs);
+        }
+        Commands::EntropyNcd { sequences } => {
+            let seqs = to_vec_strings(&sequences);
+            run_algorithm(
+                &compression_based::EntropyNCD::default(),
+                "entropy_ncd",
+                &seqs,
+            );
+        }
+        Commands::RleNcd { sequences } => {
+            let seqs = to_vec_strings(&sequences);
+            run_algorithm(&compression_based::RLENCD, "rle_ncd", &seqs);
+        }
+        Commands::BwtrleNcd { sequences } => {
+            let seqs = to_vec_strings(&sequences);
+            run_algorithm(&compression_based::BWTRLENCD, "bwtrle_ncd", &seqs);
+        }
+        Commands::ArithNcd { sequences } => {
+            let seqs = to_vec_strings(&sequences);
+            run_algorithm(&compression_based::ArithNCD::default(), "arith_ncd", &seqs);
+        }
+        Commands::Bz2Ncd { sequences } => {
+            let seqs = to_vec_strings(&sequences);
+            run_algorithm(&compression_based::BZ2NCD, "bz2_ncd", &seqs);
+        }
+        Commands::LzmaNcd { sequences } => {
+            let seqs = to_vec_strings(&sequences);
+            run_algorithm(&compression_based::LZMANCD, "lzma_ncd", &seqs);
+        }
+        Commands::ZlibNcd { sequences } => {
+            let seqs = to_vec_strings(&sequences);
+            run_algorithm(&compression_based::ZLIBNCD, "zlib_ncd", &seqs);
         }
     }
 }
