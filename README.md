@@ -30,9 +30,7 @@ cargo build --release
 
 # Run original test suite through adapter
 python3 -m pytest tests/original/ --tb=short \
-    --ignore=tests/original/test_external.py \
-    --ignore=tests/original/test_compression \
-    --ignore=tests/original/test_token/test_monge_elkan.py
+    --ignore=tests/original/test_external.py
 ```
 
 ## Architecture
