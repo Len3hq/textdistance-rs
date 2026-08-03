@@ -186,11 +186,7 @@ pub struct Jaro;
 impl Algorithm for Jaro {
     fn compute(&self, sequences: &[Vec<String>]) -> f64 {
         if let Some(result) = self.quick_answer(sequences) {
-            return if self.is_similarity() {
-                self.maximum(sequences) - result
-            } else {
-                result
-            };
+            return result;
         }
         let s1 = &sequences[0];
         let s2 = &sequences[1];
@@ -284,7 +280,7 @@ impl Default for JaroWinkler {
 impl Algorithm for JaroWinkler {
     fn compute(&self, sequences: &[Vec<String>]) -> f64 {
         let jaro = Jaro.compute(sequences);
-        if !self.winklerize || jaro == 0.0 {
+        if !self.winklerize || jaro == 0.0 || jaro <= 0.7 {
             return jaro;
         }
 
