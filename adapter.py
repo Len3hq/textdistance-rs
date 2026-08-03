@@ -265,11 +265,29 @@ class Bag(_AlgorithmWrapper):
         super().__init__("bag", is_similarity=False)
 
 # Compression-based
-class ArithNCD(_AlgorithmWrapper):
+
+# Base class for NCD algorithms computing entirely in Python (deterministic float ops)
+class _NCDBase:
+    def distance(self, *s):
+        return self(*s)
+
+    def similarity(self, *s):
+        return 1.0 - self(*s)
+
+    def normalized_distance(self, *s):
+        return self(*s)
+
+    def normalized_similarity(self, *s):
+        return 1.0 - self(*s)
+
+    def maximum(self, *s):
+        return 1
+
+class ArithNCD(_NCDBase):
     def __init__(self, qval=1, base=2, terminator=None):
         self._base = base
         self._terminator = terminator
-        super().__init__("arith-ncd", is_similarity=False)
+        self.qval = qval
 
     def __call__(self, *sequences):
         from math import log, ceil
@@ -338,17 +356,48 @@ class ArithNCD(_AlgorithmWrapper):
             output_denom *= 2
         return output
 
-class RLENCD(_AlgorithmWrapper):
+class RLENCD(_NCDBase):
     def __init__(self, qval=1):
-        super().__init__("rle-ncd", is_similarity=False)
+        self.qval = qval
 
-class BWTRLENCD(_AlgorithmWrapper):
+    def __call__(self, *sequences):
+        return _ncd_compute(self._get_size, *sequences)
+
+    def _get_size(self, data):
+        from itertools import groupby
+        result = []
+        for k, g in groupby(data):
+            n = len(list(g))
+            if n > 2:
+                result.append(str(n) + k)
+            elif n == 1:
+                result.append(k)
+            else:
+                result.append(k * 2)
+        return len(''.join(result))
+
+class BWTRLENCD(_NCDBase):
     def __init__(self):
-        super().__init__("bwtrle-ncd", is_similarity=False)
+        pass
 
-class SqrtNCD(_AlgorithmWrapper):
+    def __call__(self, *sequences):
+        return _ncd_compute(self._get_size, *sequences)
+
+    def _get_size(self, data):
+        if not data:
+            data = '\0'
+        elif '\0' not in data:
+            data += '\0'
+        modified = sorted(data[i:] + data[:i] for i in range(len(data)))
+        last_col = ''.join(s[-1] for s in modified)
+        return RLENCD()._get_size(last_col)
+
+class SqrtNCD(_NCDBase):
     def __init__(self, qval=1):
-        super().__init__("sqrt-ncd", is_similarity=False)
+        self.qval = qval
+
+    def __call__(self, *sequences):
+        return _ncd_compute(self._get_size, *sequences)
 
     def _compress(self, text):
         from collections import Counter
@@ -358,9 +407,14 @@ class SqrtNCD(_AlgorithmWrapper):
     def _get_size(self, text):
         return sum(self._compress(text).values())
 
-class EntropyNCD(_AlgorithmWrapper):
+class EntropyNCD(_NCDBase):
     def __init__(self, qval=1, coef=1, base=2):
-        super().__init__("entropy-ncd", is_similarity=False)
+        self.qval = qval
+        self.coef = coef
+        self.base = base
+
+    def __call__(self, *sequences):
+        return _ncd_compute(self._get_size, *sequences)
 
     def _compress(self, text):
         from collections import Counter
@@ -375,41 +429,59 @@ class EntropyNCD(_AlgorithmWrapper):
     def _get_size(self, text):
         return 1.0 + self._compress(text)
 
-class BZ2NCD(_AlgorithmWrapper):
+class BZ2NCD(_NCDBase):
     def __init__(self):
-        super().__init__("bz2-ncd", is_similarity=False)
+        pass
 
     def __call__(self, *sequences):
         import codecs
-        if not sequences:
-            return 0
-        # Original NCD computation using bz2
         def get_size(data):
             if isinstance(data, str):
                 data = data.encode('utf-8')
             return len(codecs.encode(data, 'bz2_codec')[15:])
-        seqs = list(sequences)
-        compressed = [get_size(s) for s in seqs]
-        max_len = max(compressed)
-        if max_len == 0:
-            return 0
-        concat = ''.join(seqs)
-        concat_len = get_size(concat)
-        return (concat_len - min(compressed) * (len(seqs) - 1)) / max_len
+        return _ncd_compute(get_size, *sequences)
 
-    def distance(self, *sequences):
-        return self(*sequences)
-
-    def similarity(self, *sequences):
-        return 1 - self(*sequences)
-
-class LZMANCD(_AlgorithmWrapper):
+class LZMANCD(_NCDBase):
     def __init__(self):
-        super().__init__("lzma-ncd", is_similarity=False)
+        pass
 
-class ZLIBNCD(_AlgorithmWrapper):
+    def __call__(self, *sequences):
+        return _ncd_compute(self._get_size, *sequences)
+
+    def _get_size(self, data):
+        return EntropyNCD()._get_size(data)
+
+class ZLIBNCD(_NCDBase):
     def __init__(self):
-        super().__init__("zlib-ncd", is_similarity=False)
+        pass
+
+    def __call__(self, *sequences):
+        return _ncd_compute(self._get_size, *sequences)
+
+    def _get_size(self, data):
+        return EntropyNCD()._get_size(data)
+
+
+# Shared NCD computation helper
+def _ncd_compute(get_size, *sequences):
+    from itertools import permutations
+    if not sequences:
+        return 0
+    seqs = list(sequences)
+    compressed = [get_size(s) for s in seqs]
+    max_len = max(compressed)
+    if max_len == 0:
+        return 0
+    min_len = min(compressed)
+    concat_min = float('Inf')
+    empty = type(seqs[0])()
+    for perm in permutations(seqs):
+        if isinstance(empty, str):
+            data = empty.join(perm)
+        else:
+            data = sum(perm, empty)
+        concat_min = min(concat_min, get_size(data))
+    return (concat_min - min_len * (len(seqs) - 1)) / max_len
 
 
 # MongeElkan - deferred

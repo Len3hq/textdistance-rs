@@ -1,6 +1,6 @@
 {
-  "duration_seconds": 65.07133913040161,
-  "iterations": 235,
+  "duration_seconds": 65.15414094924927,
+  "iterations": 363,
   "algorithms_tested": 16,
   "divergence_count": 0,
   "passed": true,
