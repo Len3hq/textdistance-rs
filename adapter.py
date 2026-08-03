@@ -266,8 +266,77 @@ class Bag(_AlgorithmWrapper):
 
 # Compression-based
 class ArithNCD(_AlgorithmWrapper):
-    def __init__(self, qval=1):
+    def __init__(self, qval=1, base=2, terminator=None):
+        self._base = base
+        self._terminator = terminator
         super().__init__("arith-ncd", is_similarity=False)
+
+    def __call__(self, *sequences):
+        from math import log, ceil
+        if not sequences:
+            return 0
+        def get_size(data):
+            compressed = self._compress(data)
+            num = compressed.numerator
+            if num == 0:
+                return 0
+            return ceil(log(num, self._base))
+        compressed = [get_size(s) for s in sequences]
+        max_len = max(compressed)
+        if max_len == 0:
+            return 0
+        from itertools import permutations
+        concat_min = float('Inf')
+        empty = type(sequences[0])()
+        for perm in permutations(sequences):
+            data = empty.join(perm)
+            concat_min = min(concat_min, get_size(data))
+        return (concat_min - min(compressed) * (len(sequences) - 1)) / max_len
+
+    def distance(self, *sequences):
+        return self(*sequences)
+
+    def similarity(self, *sequences):
+        return 1 - self(*sequences)
+
+    def _make_probs(self, *sequences):
+        from collections import Counter
+        from fractions import Fraction
+        counts = Counter()
+        for s in sequences:
+            counts.update(s)
+        if self._terminator is not None:
+            counts[self._terminator] = 1
+        total = sum(counts.values())
+        prob_pairs = {}
+        cumulative = 0
+        for char, count in counts.most_common():
+            prob_pairs[char] = (Fraction(cumulative, total), Fraction(count, total))
+            cumulative += count
+        return prob_pairs
+
+    def _compress(self, data):
+        from fractions import Fraction
+        probs = self._make_probs(data)
+        data_str = data
+        if self._terminator is not None:
+            if self._terminator in data_str:
+                data_str = data_str.replace(self._terminator, '')
+            data_str += self._terminator
+        start = Fraction(0, 1)
+        width = Fraction(1, 1)
+        for char in data_str:
+            prob_start, prob_width = probs[char]
+            start += prob_start * width
+            width *= prob_width
+        end = start + width
+        output = Fraction(0, 1)
+        output_denom = 1
+        while not (start <= output < end):
+            output_numer = 1 + ((start.numerator * output_denom) // start.denominator)
+            output = Fraction(output_numer, output_denom)
+            output_denom *= 2
+        return output
 
 class RLENCD(_AlgorithmWrapper):
     def __init__(self, qval=1):
@@ -309,6 +378,30 @@ class EntropyNCD(_AlgorithmWrapper):
 class BZ2NCD(_AlgorithmWrapper):
     def __init__(self):
         super().__init__("bz2-ncd", is_similarity=False)
+
+    def __call__(self, *sequences):
+        import codecs
+        if not sequences:
+            return 0
+        # Original NCD computation using bz2
+        def get_size(data):
+            if isinstance(data, str):
+                data = data.encode('utf-8')
+            return len(codecs.encode(data, 'bz2_codec')[15:])
+        seqs = list(sequences)
+        compressed = [get_size(s) for s in seqs]
+        max_len = max(compressed)
+        if max_len == 0:
+            return 0
+        concat = ''.join(seqs)
+        concat_len = get_size(concat)
+        return (concat_len - min(compressed) * (len(seqs) - 1)) / max_len
+
+    def distance(self, *sequences):
+        return self(*sequences)
+
+    def similarity(self, *sequences):
+        return 1 - self(*sequences)
 
 class LZMANCD(_AlgorithmWrapper):
     def __init__(self):
