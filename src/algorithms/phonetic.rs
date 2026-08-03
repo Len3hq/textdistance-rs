@@ -28,11 +28,9 @@ impl Algorithm for MRA {
             let minlen = *lengths.iter().min().unwrap_or(&0);
             let mut new_sequences: Vec<Vec<char>> = Vec::new();
 
-            // Compare character-by-character
             for i in 0..minlen {
                 let chars: Vec<char> = sequences.iter().map(|s| s[i]).collect();
                 if !chars.windows(2).all(|w| w[0] == w[1]) {
-                    // Mismatch found — keep these chars
                     for (si, s) in sequences.iter().enumerate() {
                         if new_sequences.len() <= si {
                             new_sequences.push(Vec::new());
@@ -42,7 +40,6 @@ impl Algorithm for MRA {
                 }
             }
 
-            // Append remaining chars beyond minlen
             let mut updated = Vec::new();
             for (si, s) in sequences.iter().enumerate() {
                 let mut combined;
@@ -62,6 +59,12 @@ impl Algorithm for MRA {
             return max_length as f64;
         }
         (max_length - *lengths.iter().max().unwrap_or(&0)) as f64
+    }
+
+    fn maximum(&self, sequences: &[Vec<String>]) -> f64 {
+        let words: Vec<String> = sequences.iter().map(|s| s.join("")).collect();
+        let coded: Vec<Vec<char>> = words.iter().map(|w| self.calc_mra(w)).collect();
+        coded.iter().map(|c| c.len()).max().unwrap_or(0) as f64
     }
 
     fn is_similarity(&self) -> bool {
