@@ -1,4 +1,0 @@
-# file: /Users/AMAH/Desktop/Port Hackathon/textdistance-rs/adapter.py
-# hypothesis_version: 6.141.1
-
-[0.0, 0.25, 0.5, 1.0, '\x00', '-', '--', 'Inf', '_', 'as_set', 'bag', 'bias', 'bz2_codec', 'cosine', 'damerau-levenshtein', 'debug', 'distance', 'editex', 'gotoh', 'group_cost', 'hamming', 'identity', 'jaccard', 'jaro', 'jaro-winkler', 'ks', 'lcsseq', 'lcsstr', 'length', 'levenshtein', 'local', 'match_cost', 'matrix', 'mismatch_cost', 'mlipns', 'mra', 'needleman-wunsch', 'normalized_distance', 'overlap', 'postfix', 'prefix', 'qval', 'ratcliff-obershelp', 'release', 'restricted', 'similarity', 'smith-waterman', 'sorensen', 'str-cmp95', 'tanimoto', 'target', 'textdistance-rs', 'tversky', 'utf-8', 'winklerize']
