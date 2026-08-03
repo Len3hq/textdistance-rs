@@ -18,7 +18,7 @@ impl Algorithm for SqrtNCD {
         }
         // Concat: try permutations, pick min
         let mut concat_min = f64::INFINITY;
-        let empty: Vec<String> = vec![];
+        let _empty: Vec<String> = vec![];
         // Simple: concatenate all (only 2 sequences in practice)
         if prepared.len() == 2 {
             let concat: Vec<String> = prepared[0]
