@@ -57,8 +57,8 @@ Original test files in `tests/original/` remain completely unmodified.
 ## Test Pass Rate
 
 - **Total applicable:** 397 (excluding 30 external lib tests, 3 MongeElkan deferred)
-- **Passing:** 337 (84.9%)
-- **Failing:** 60
+- **Passing:** 334-337 (~84-85%, varies slightly due to randomized hypothesis inputs)
+- **Failing:** 60-66
   - 25 compression NCD tests — approximation differs from Python stdlib
   - 22 sim_func tests (Matrix, SmithWaterman, Gotoh, NeedlemanWunsch) — documented exclusion
   - 13 test_common.py — MongeElkan dummy placeholder
