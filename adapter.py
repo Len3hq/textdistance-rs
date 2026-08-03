@@ -281,9 +281,30 @@ class SqrtNCD(_AlgorithmWrapper):
     def __init__(self, qval=1):
         super().__init__("sqrt-ncd", is_similarity=False)
 
+    def _compress(self, text):
+        from collections import Counter
+        from math import sqrt
+        return {e: sqrt(c) for e, c in Counter(text).items()}
+
+    def _get_size(self, text):
+        return sum(self._compress(text).values())
+
 class EntropyNCD(_AlgorithmWrapper):
     def __init__(self, qval=1, coef=1, base=2):
         super().__init__("entropy-ncd", is_similarity=False)
+
+    def _compress(self, text):
+        from collections import Counter
+        from math import log
+        total = len(text)
+        entropy = 0.0
+        for count in Counter(text).values():
+            p = count / total
+            entropy -= p * log(p, 2)
+        return entropy
+
+    def _get_size(self, text):
+        return 1.0 + self._compress(text)
 
 class BZ2NCD(_AlgorithmWrapper):
     def __init__(self):

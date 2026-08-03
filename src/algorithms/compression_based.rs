@@ -221,27 +221,37 @@ impl BWTRLENCD {
         if text.is_empty() {
             return String::from("\0");
         }
-        // Burrows-Wheeler Transform
-        let text_with_term = if !text.contains('\0') {
-            text.clone() + "\0"
-        } else {
-            text.clone()
-        };
-        let mut rotations: Vec<String> = (0..text_with_term.len())
+        // Burrows-Wheeler Transform - use byte-level for robustness
+        let text_bytes = text.as_bytes();
+        let term = 0u8;
+        let mut with_term: Vec<u8> = text_bytes.to_vec();
+        if !with_term.contains(&term) {
+            with_term.push(term);
+        }
+        let len = with_term.len();
+        let mut rotations: Vec<Vec<u8>> = (0..len)
             .map(|i| {
-                let mut s = text_with_term[i..].to_string();
-                s.push_str(&text_with_term[..i]);
-                s
+                let mut v = Vec::with_capacity(len);
+                v.extend_from_slice(&with_term[i..]);
+                v.extend_from_slice(&with_term[..i]);
+                v
             })
             .collect();
         rotations.sort();
-        let last_col: String = rotations
+        let last_col: Vec<u8> = rotations.iter().map(|r| r[len - 1]).collect();
+        // Convert back to string, replacing invalid UTF-8 bytes
+        let last_str: String = last_col
             .iter()
-            .map(|s| s.chars().last().unwrap())
+            .map(|&b| {
+                if b.is_ascii() && !b.is_ascii_control() || b == term {
+                    b as char
+                } else {
+                    '?'
+                }
+            })
             .collect();
-        // Then RLE
+        let chars: Vec<String> = last_str.chars().map(|c| c.to_string()).collect();
         let rle = RLENCD;
-        let chars: Vec<String> = last_col.chars().map(|c| c.to_string()).collect();
         rle.compress(&chars)
     }
 
